@@ -195,7 +195,7 @@ def scale_cam_image(cam, target_size=None, compute_device=None):
         if target_size is not None:
             img = cv2.resize(img.cpu().numpy(), target_size)
         result.append(img)
-    result = torch.float32(result)
+    result = result.to(torch.float32) # Do we need float32s?
 
     return torch.tensor(result).to(compute_device)
 
