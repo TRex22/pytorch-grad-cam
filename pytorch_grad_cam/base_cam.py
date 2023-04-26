@@ -71,7 +71,7 @@ class BaseCAM:
                 eigen_smooth: bool = False) -> torch.Tensor:
 
         if self.cuda:
-            input_tensor = input_tensor.to(self.cuda_device)
+            input_tensor = input_tensor.to(self.compute_device)
 
         if self.compute_input_gradient:
             input_tensor = torch.autograd.Variable(input_tensor,
