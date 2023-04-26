@@ -18,9 +18,14 @@ class BaseCAM:
                  uses_gradients: bool = True) -> None:
         self.model = model.eval()
         self.target_layers = target_layers
+
         self.cuda = use_cuda
         if self.cuda:
             self.model = model.cuda()
+            self.compute_device = torch.device("cuda")
+        else:
+            self.compute_device = torch.device("cpu")
+
         self.reshape_transform = reshape_transform
         self.compute_input_gradient = compute_input_gradient
         self.uses_gradients = uses_gradients
@@ -106,10 +111,10 @@ class BaseCAM:
             self,
             input_tensor: torch.Tensor,
             targets: List[torch.nn.Module],
-            eigen_smooth: bool) -> np.ndarray:
-        activations_list = [a.cpu().data.numpy()
+            eigen_smooth: bool) -> torch.Tensor:
+        activations_list = [a.data
                             for a in self.activations_and_grads.activations]
-        grads_list = [g.cpu().data.numpy()
+        grads_list = [g.data
                       for g in self.activations_and_grads.gradients]
         target_size = self.get_target_width_height(input_tensor)
 
@@ -117,8 +122,10 @@ class BaseCAM:
         # Loop over the saliency image from every layer
         for i in range(len(self.target_layers)):
             target_layer = self.target_layers[i]
+
             layer_activations = None
             layer_grads = None
+
             if i < len(activations_list):
                 layer_activations = activations_list[i]
             if i < len(grads_list):
@@ -130,7 +137,9 @@ class BaseCAM:
                                      layer_activations,
                                      layer_grads,
                                      eigen_smooth)
-            cam = np.maximum(cam, 0)
+
+            cam = torch.maximum(cam, torch.tensor(0).to(self.compute_device))
+
             scaled = scale_cam_image(cam, target_size)
             cam_per_target_layer.append(scaled[:, None, :])
 
