@@ -1,4 +1,5 @@
-import numpy as np
+import torch
+import np
 from pytorch_grad_cam.base_cam import BaseCAM
 
 
