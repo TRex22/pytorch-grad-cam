@@ -173,29 +173,18 @@ def scale_cam_image(cam, target_size=None, compute_device=None):
     for i in range(cam.shape[0]):
         img = cam[i]
 
-        #     if not isinstance(img, torch.Tensor):
-        #         img = torch.from_numpy(img) # TODO: Remove when we can
-        #         print("NUMPY ! Remove!!")
-
-        #     img = img - torch.min(img)
-        #     img = img / (1e-7 + torch.max(img))
-
-        #     if target_size is not None:
-        #         # img = F.interpolate(img.unsqueeze(0).unsqueeze(0), size=target_size, mode='bilinear', align_corners=False).squeeze(0).squeeze(0).T # TODO: Remove transpose
-        #         img = img.resize_(target_size).T # TODO: Remove transpose
-
-        #     result[i] = img
-
-        # return result.to(torch.float32).to(compute_device)
-
-        # result = []
-        # for img in cam:
-
         img = img - torch.min(img)
         img = img / (1e-7 + torch.max(img))
 
+        # CV2 has some annoyances
+        # https://stackoverflow.com/questions/63519965/torch-transform-resize-vs-cv2-resize
+        # https://discuss.pytorch.org/t/torchvision-resize-vs-cv2-resize/47530
+
+        # if target_size is not None:
+        #     img = cv2.resize(img.cpu().numpy(), target_size)
+
         if target_size is not None:
-            img = cv2.resize(img.cpu().numpy(), target_size)
+            img = F.interpolate(img, size=target_size, mode='bicubic', align_corners=False)
 
         result[i] = torch.tensor(img).to(torch.float32) # Do we need float32s?
 
