@@ -165,28 +165,39 @@ def scale_cam_image(cam, target_size=None, compute_device=None):
     if compute_device is None:
         compute_device = torch.device("cpu")
 
-    if target_size is not None:
-        result = torch.zeros([cam.shape[0], target_size[0], target_size[1]]) # TODO: Swap back and remove transpose
-    else:
-        result = torch.zeros(cam.shape)
+    # if target_size is not None:
+    #     result = torch.zeros([cam.shape[0], target_size[1], target_size[0]]) # TODO: Swap back and remove transpose
+    # else:
+    #     result = torch.zeros(cam.shape)
 
-    for i in range(cam.shape[0]):
-        img = cam[i]
+    # for i in range(cam.shape[0]):
+    #     img = cam[i]
 
-        if not isinstance(img, torch.Tensor):
-            img = torch.from_numpy(img) # TODO: Remove when we can
-            print("NUMPY ! Remove!!")
+    #     if not isinstance(img, torch.Tensor):
+    #         img = torch.from_numpy(img) # TODO: Remove when we can
+    #         print("NUMPY ! Remove!!")
 
-        img = img - torch.min(img)
-        img = img / (1e-7 + torch.max(img))
+    #     img = img - torch.min(img)
+    #     img = img / (1e-7 + torch.max(img))
 
+    #     if target_size is not None:
+    #         # img = F.interpolate(img.unsqueeze(0).unsqueeze(0), size=target_size, mode='bilinear', align_corners=False).squeeze(0).squeeze(0).T # TODO: Remove transpose
+    #         img = img.resize_(target_size).T # TODO: Remove transpose
+
+    #     result[i] = img
+
+    # return result.to(torch.float32).to(compute_device)
+
+    result = []
+    for img in cam:
+        img = img - np.min(img)
+        img = img / (1e-7 + np.max(img))
         if target_size is not None:
-            # img = F.interpolate(img.unsqueeze(0).unsqueeze(0), size=target_size, mode='bilinear', align_corners=False).squeeze(0).squeeze(0).T # TODO: Remove transpose
-            img = img.resize_(target_size)
+            img = cv2.resize(img, target_size)
+        result.append(img)
+    result = np.float32(result)
 
-        result[i] = img
-
-    return result.to(torch.float32).to(compute_device)
+    return torch.tensor(result).to(compute_device)
 
 
 def scale_accross_batch_and_channels(tensor, target_size):
