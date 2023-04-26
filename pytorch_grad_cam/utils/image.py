@@ -4,6 +4,7 @@ from matplotlib.lines import Line2D
 import cv2
 import numpy as np
 import torch
+import torch.nn.functional as F
 from torchvision.transforms import Compose, Normalize, ToTensor
 from typing import List, Dict
 import math
@@ -156,28 +157,33 @@ def show_factorization_on_image(img: np.ndarray,
         result = np.hstack((result, data))
     return result
 
-
-def scale_cam_image(cam, target_size=None):
+def scale_cam_image(cam, target_size=None, compute_device=None):
     # Disabled the target_size scaling for now
     # It appears to swap the axes dimensions and needs further work for the
     # proof of concept
+
+    if compute_device is None:
+        compute_device = torch.device("cpu")
 
     if target_size is not None:
         result = torch.zeros([cam.shape[0], target_size[1], target_size[0]])
     else:
         result = torch.zeros(cam.shape)
 
-    for i in range(cam.shape[0]):
-        img = torch.tensor(cam[i]) # TODO: Remove when we can
+    for img in cam:
+        img = torch.from_numpy(img) # TODO: Remove when we can
+
         img = img - torch.min(img)
         img = img / (1e-7 + torch.max(img))
 
         if target_size is not None:
-            img = img.resize_(target_size).T
+            img = F.interpolate(img.unsqueeze(0).unsqueeze(0), size=target_size, mode='bilinear', align_corners=False).squeeze(0).squeeze(0)
 
+        img = img.numpy()
         result[i] = img
 
-    return result.to(torch.float32)
+    result = np.float32(result)
+    return result.to(torch.float32).to(compute_device)
 
 
 def scale_accross_batch_and_channels(tensor, target_size):
