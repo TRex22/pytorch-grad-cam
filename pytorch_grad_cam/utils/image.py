@@ -193,7 +193,7 @@ def scale_cam_image(cam, target_size=None, compute_device=None):
         img = img - torch.min(img)
         img = img / (1e-7 + torch.max(img))
         if target_size is not None:
-            img = cv2.resize(img, target_size)
+            img = cv2.resize(img.cpu().numpy(), target_size)
         result.append(img)
     result = torch.float32(result)
 
