@@ -171,7 +171,9 @@ def scale_cam_image(cam, target_size=None, compute_device=None):
         result = torch.zeros(cam.shape)
 
     for img in cam:
-        img = torch.from_numpy(img) # TODO: Remove when we can
+        if not isinstance(img, torch.Tensor):
+            img = torch.from_numpy(img) # TODO: Remove when we can
+            print("NUMPY ! Remove!!")
 
         img = img - torch.min(img)
         img = img / (1e-7 + torch.max(img))
