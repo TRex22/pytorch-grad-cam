@@ -168,7 +168,7 @@ def scale_cam_image(cam, target_size=None):
         result = torch.zeros(cam.shape)
 
     for i in range(cam.shape[0]):
-        img = cam[i]
+        img = torch.tensor(cam[i]) # TODO: Remove when we can
         img = img - torch.min(img)
         img = img / (1e-7 + torch.max(img))
 

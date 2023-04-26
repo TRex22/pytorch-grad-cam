@@ -59,6 +59,7 @@ class BaseCAM:
                                        activations,
                                        grads)
         weighted_activations = weights[:, :, None, None] * activations
+
         if eigen_smooth:
             cam = get_2d_projection(weighted_activations)
         else:
