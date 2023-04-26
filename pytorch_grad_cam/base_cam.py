@@ -142,7 +142,7 @@ class BaseCAM:
 
             cam = torch.maximum(cam, torch.tensor(0).to(self.compute_device))
 
-            scaled = scale_cam_image(cam, target_size, compute_device=compute_device)
+            scaled = scale_cam_image(cam, target_size, compute_device=self.compute_device)
             cam_per_target_layer.append(scaled[:, None, :])
 
         return cam_per_target_layer

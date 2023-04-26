@@ -179,7 +179,6 @@ def scale_cam_image(cam, target_size=None, compute_device=None):
         if target_size is not None:
             img = F.interpolate(img.unsqueeze(0).unsqueeze(0), size=target_size, mode='bilinear', align_corners=False).squeeze(0).squeeze(0)
 
-        img = img.numpy()
         result[i] = img
 
     result = np.float32(result)
