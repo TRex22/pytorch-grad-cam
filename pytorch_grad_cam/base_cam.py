@@ -28,9 +28,10 @@ class BaseCAM:
 
         self.reshape_transform = reshape_transform
         self.compute_input_gradient = compute_input_gradient
+
         self.uses_gradients = uses_gradients
         self.activations_and_grads = ActivationsAndGradients(
-            self.model, target_layers, reshape_transform)
+            self.model, target_layers, reshape_transform, use_cuda = use_cuda)
 
     """ Get a vector of weights for every channel in the target layer.
         Methods that return weights channels,
@@ -41,7 +42,7 @@ class BaseCAM:
                         target_layers: List[torch.nn.Module],
                         targets: List[torch.nn.Module],
                         activations: torch.Tensor,
-                        grads: torch.Tensor) -> np.ndarray:
+                        grads: torch.Tensor) -> torch.Tensor:
         raise Exception("Not Implemented")
 
     def get_cam_image(self,
@@ -50,7 +51,7 @@ class BaseCAM:
                       targets: List[torch.nn.Module],
                       activations: torch.Tensor,
                       grads: torch.Tensor,
-                      eigen_smooth: bool = False) -> np.ndarray:
+                      eigen_smooth: bool = False) -> torch.Tensor:
 
         weights = self.get_cam_weights(input_tensor,
                                        target_layer,
