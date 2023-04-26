@@ -181,9 +181,9 @@ def scale_cam_image(cam, target_size=None, compute_device=None):
         img = img / (1e-7 + torch.max(img))
 
         if target_size is not None:
-            img = F.interpolate(img.unsqueeze(0).unsqueeze(0), size=target_size, mode='bilinear', align_corners=False).squeeze(0).squeeze(0)
+            img = F.interpolate(img.unsqueeze(0).unsqueeze(0), size=target_size, mode='bilinear', align_corners=False).squeeze(0).squeeze(0).T # TODO: Remove transpose
 
-        result[i] = img.T # TODO: Remove transpose
+        result[i] = img
 
     return result.to(torch.float32).to(compute_device)
 
