@@ -186,7 +186,7 @@ def scale_cam_image(cam, target_size=None, compute_device=None):
         if target_size is not None:
             img = F.interpolate(img.unsqueeze(0).unsqueeze(0), size=(target_size[1], target_size[0]), mode='bilinear', align_corners=False).squeeze(0).squeeze(0)
 
-        result[i] = torch.tensor(img).to(torch.float32) # Do we need float32s?
+        result[i] = img.to(torch.float16)
 
     return result.to(compute_device)
 
