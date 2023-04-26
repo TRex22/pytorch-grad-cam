@@ -1,5 +1,4 @@
 import torch
-import numpy as np
 from pytorch_grad_cam.base_cam import BaseCAM
 
 
@@ -20,4 +19,4 @@ class GradCAM(BaseCAM):
                         target_category,
                         activations,
                         grads):
-        return np.mean(grads, axis=(2, 3))
+        return torch.mean(grads, axis=(2, 3))

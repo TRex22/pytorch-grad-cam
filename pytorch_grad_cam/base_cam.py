@@ -199,7 +199,8 @@ class BaseCAM:
                             targets, eigen_smooth)
 
     def __del__(self):
-        self.activations_and_grads.release() # TODO: Pytorch 2.0 warning when its not yet set
+        if hasattr(self, 'activations_and_grads'):
+            self.activations_and_grads.release()
 
     def __enter__(self):
         return self
