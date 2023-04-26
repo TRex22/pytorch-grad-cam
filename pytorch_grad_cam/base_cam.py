@@ -1,4 +1,3 @@
-import numpy as np
 import torch
 import ttach as tta
 from typing import Callable, List, Tuple
@@ -69,10 +68,10 @@ class BaseCAM:
     def forward(self,
                 input_tensor: torch.Tensor,
                 targets: List[torch.nn.Module],
-                eigen_smooth: bool = False) -> np.ndarray:
+                eigen_smooth: bool = False) -> torch.Tensor:
 
         if self.cuda:
-            input_tensor = input_tensor.cuda()
+            input_tensor = input_tensor.to(self.cuda_device)
 
         if self.compute_input_gradient:
             input_tensor = torch.autograd.Variable(input_tensor,
@@ -80,7 +79,7 @@ class BaseCAM:
 
         outputs = self.activations_and_grads(input_tensor)
         if targets is None:
-            target_categories = np.argmax(outputs.cpu().data.numpy(), axis=-1)
+            target_categories = torch.argmax(outputs.data, axis=-1)
             targets = [ClassifierOutputTarget(
                 category) for category in target_categories]
 
@@ -159,15 +158,17 @@ class BaseCAM:
     def forward_augmentation_smoothing(self,
                                        input_tensor: torch.Tensor,
                                        targets: List[torch.nn.Module],
-                                       eigen_smooth: bool = False) -> np.ndarray:
+                                       eigen_smooth: bool = False) -> torch.Tensor:
         transforms = tta.Compose(
             [
                 tta.HorizontalFlip(),
                 tta.Multiply(factors=[0.9, 1, 1.1]),
             ]
         )
-        cams = []
-        for transform in transforms:
+
+        cams = torch.zeros([len(transforms), input_tensor.shape[0], input_tensor.shape[1]])
+        for i in range(len(transforms)):
+            transform = transforms[i]
             augmented_tensor = transform.augment_image(input_tensor)
             cam = self.forward(augmented_tensor,
                                targets,
@@ -178,19 +179,17 @@ class BaseCAM:
             cam = torch.from_numpy(cam)
             cam = transform.deaugment_mask(cam)
 
-            # Back to numpy float32, HxW
-            cam = cam.numpy()
             cam = cam[:, 0, :, :]
-            cams.append(cam)
+            cams[i] = cam
 
-        cam = np.mean(np.float32(cams), axis=0)
+        cam = torch.mean(cams.to(torch.float32), axis=0)
         return cam
 
     def __call__(self,
                  input_tensor: torch.Tensor,
                  targets: List[torch.nn.Module] = None,
                  aug_smooth: bool = False,
-                 eigen_smooth: bool = False) -> np.ndarray:
+                 eigen_smooth: bool = False) -> torch.Tensor:
 
         # Smooth the CAM result with test time augmentation
         if aug_smooth is True:
