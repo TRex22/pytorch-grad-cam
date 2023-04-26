@@ -166,7 +166,7 @@ def scale_cam_image(cam, target_size=None, compute_device=None):
         compute_device = torch.device("cpu")
 
     if target_size is not None:
-        result = torch.zeros([cam.shape[0], target_size[1], target_size[0]])
+        result = torch.zeros([cam.shape[0], target_size[0], target_size[1]])
     else:
         result = torch.zeros(cam.shape)
 
@@ -185,7 +185,6 @@ def scale_cam_image(cam, target_size=None, compute_device=None):
 
         result[i] = img
 
-    result = np.float32(result)
     return result.to(torch.float32).to(compute_device)
 
 
