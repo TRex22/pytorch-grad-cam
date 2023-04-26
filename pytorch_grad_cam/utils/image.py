@@ -190,12 +190,12 @@ def scale_cam_image(cam, target_size=None, compute_device=None):
 
     result = []
     for img in cam:
-        img = img - np.min(img)
-        img = img / (1e-7 + np.max(img))
+        img = img - torch.min(img)
+        img = img / (1e-7 + torch.max(img))
         if target_size is not None:
             img = cv2.resize(img, target_size)
         result.append(img)
-    result = np.float32(result)
+    result = torch.float32(result)
 
     return torch.tensor(result).to(compute_device)
 
