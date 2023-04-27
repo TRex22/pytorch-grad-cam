@@ -37,7 +37,7 @@ class BaseCAM:
 
         self.uses_gradients = uses_gradients
         self.activations_and_grads = ActivationsAndGradients(
-            self.model, target_layers, reshape_transform, use_cuda = self.use_cuda)
+            self.model, target_layers, reshape_transform, use_cuda = self.cuda)
 
     """ Get a vector of weights for every channel in the target layer.
         Methods that return weights channels,
