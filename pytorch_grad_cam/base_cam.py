@@ -12,6 +12,7 @@ class BaseCAM:
                  model: torch.nn.Module,
                  target_layers: List[torch.nn.Module],
                  use_cuda: bool = False,
+                 compute_device: torch.device = None,
                  reshape_transform: Callable = None,
                  compute_input_gradient: bool = False,
                  uses_gradients: bool = True) -> None:
@@ -19,7 +20,13 @@ class BaseCAM:
         self.target_layers = target_layers
 
         self.cuda = use_cuda
-        if self.cuda:
+        self.compute_device = compute_device
+
+        # The cuda device is optional to specify
+        # Meaning we have to backward support `use_cuda`
+        if self.cuda_device:
+            self.model = model.to(self.cuda_device)
+        elif self.cuda:
             self.model = model.cuda()
             self.compute_device = torch.device("cuda")
         else:
@@ -30,7 +37,7 @@ class BaseCAM:
 
         self.uses_gradients = uses_gradients
         self.activations_and_grads = ActivationsAndGradients(
-            self.model, target_layers, reshape_transform, use_cuda = use_cuda)
+            self.model, target_layers, reshape_transform, use_cuda = self.use_cuda)
 
     """ Get a vector of weights for every channel in the target layer.
         Methods that return weights channels,

@@ -4,7 +4,7 @@ class ActivationsAndGradients:
     """ Class for extracting activations and
     registering gradients from targetted intermediate layers """
 
-    def __init__(self, model, target_layers, reshape_transform, use_cuda: bool = False):
+    def __init__(self, model, target_layers, reshape_transform, use_cuda: bool = False, compute_device: torch.device = None):
         self.model = model
         self.gradients = []
         self.activations = []
@@ -12,7 +12,12 @@ class ActivationsAndGradients:
         self.handles = []
 
         self.use_cuda = use_cuda
-        if self.use_cuda:
+
+        # TODO: Possible clean-up here
+        if compute_device:
+            self.compute_device = compute_device
+            self.use_cuda = True
+        elif self.use_cuda:
             self.compute_device = torch.device("cuda")
         else:
             self.compute_device = torch.device("cpu")
