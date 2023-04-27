@@ -24,8 +24,8 @@ class BaseCAM:
 
         # The cuda device is optional to specify
         # Meaning we have to backward support `use_cuda`
-        if self.cuda_device:
-            self.model = model.to(self.cuda_device)
+        if self.compute_device:
+            self.model = model.to(self.compute_device)
         elif self.cuda:
             self.model = model.cuda()
             self.compute_device = torch.device("cuda")
