@@ -59,11 +59,11 @@ class ActivationsAndGradients:
         output.register_hook(_store_grad)
 
     def __call__(self, x):
-        for grad in self.gradients:
-            del grad
+        # for grad in self.gradients:
+        #     del grad
 
-        for activation in self.activations:
-            del activation
+        # for activation in self.activations:
+        #     del activation
 
         self.gradients = []
         self.activations = []
@@ -71,11 +71,11 @@ class ActivationsAndGradients:
         return self.model(x)
 
     def release(self):
-        for grad in self.gradients:
-            del grad
+        # for grad in self.gradients:
+        #     del grad
 
-        for activation in self.activations:
-            del activation
+        # for activation in self.activations:
+        #     del activation
 
         for handle in self.handles:
             handle.remove()
