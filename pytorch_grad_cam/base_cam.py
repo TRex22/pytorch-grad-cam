@@ -207,8 +207,8 @@ class BaseCAM:
                             targets, eigen_smooth)
 
     def __del__(self):
-        if hasattr(self, 'activations_and_grads'):
-            self.activations_and_grads.release()
+        # if hasattr(self, 'activations_and_grads'):
+        self.activations_and_grads.release()
 
     def __enter__(self):
         return self
