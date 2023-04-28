@@ -37,7 +37,7 @@ class ActivationsAndGradients:
             activation = self.reshape_transform(activation)
 
         if self.use_cuda:
-            self.activations.append(activation.to(self.compute_device))
+            self.activations.append(activation.to(self.compute_device).detach())
         else:
             self.activations.append(activation.cpu().detach())
 
@@ -52,7 +52,7 @@ class ActivationsAndGradients:
                 grad = self.reshape_transform(grad)
 
             if self.use_cuda:
-                self.gradients = [grad.to(self.compute_device)] + self.gradients
+                self.gradients = [grad.to(self.compute_device).detach()] + self.gradients
             else:
                 self.gradients = [grad.cpu().detach()] + self.gradients
 
