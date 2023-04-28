@@ -59,6 +59,12 @@ class ActivationsAndGradients:
         output.register_hook(_store_grad)
 
     def __call__(self, x):
+        for grad in self.gradients:
+            del grad
+
+        for activation in self.activations:
+            del activation
+
         self.gradients = []
         self.activations = []
 
