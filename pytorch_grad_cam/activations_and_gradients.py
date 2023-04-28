@@ -65,5 +65,11 @@ class ActivationsAndGradients:
         return self.model(x)
 
     def release(self):
+        for grad in self.gradients:
+            del grad
+
+        for activation in self.activations:
+            del activation
+
         for handle in self.handles:
             handle.remove()
