@@ -1,7 +1,7 @@
 import numpy as np
 import torch
 import ttach as tta
-from typing import Callable, List, Tuple
+from typing import Callable, List, Tuple, Optional
 from pytorch_grad_cam.activations_and_gradients import ActivationsAndGradients
 from pytorch_grad_cam.utils.svd_on_activations import get_2d_projection
 from pytorch_grad_cam.utils.image import scale_cam_image
@@ -16,7 +16,8 @@ class BaseCAM:
                  cuda_device = None,
                  reshape_transform: Callable = None,
                  compute_input_gradient: bool = False,
-                 uses_gradients: bool = True) -> None:
+                 uses_gradients: bool = True,
+                 tta_transforms: Optional[tta.Compose] = None) -> None:
         self.model = model.eval()
         self.target_layers = target_layers
 
@@ -31,6 +32,21 @@ class BaseCAM:
         self.reshape_transform = reshape_transform
         self.compute_input_gradient = compute_input_gradient
         self.uses_gradients = uses_gradients
+
+        # Use the same device as the model. TODO JMC: Remove my direct implementation!
+        self.device = next(self.model.parameters()).device
+        self.reshape_transform = reshape_transform
+        self.compute_input_gradient = compute_input_gradient
+        self.uses_gradients = uses_gradients
+        if tta_transforms is None:
+            self.tta_transforms = tta.Compose(
+                [
+                    tta.HorizontalFlip(),
+                    tta.Multiply(factors=[0.9, 1, 1.1]),
+                ]
+            )
+        else:
+            self.tta_transforms = tta_transforms
 
         self.activations_and_grads = ActivationsAndGradients(
             self.model, target_layers, reshape_transform, use_cuda = use_cuda, cuda_device = cuda_device)
@@ -76,12 +92,15 @@ class BaseCAM:
             input_tensor = input_tensor.to(self.cuda_device)
         elif self.cuda:
             input_tensor = input_tensor.cuda()
+        else:
+            input_tensor = input_tensor.to(self.device)
 
         if self.compute_input_gradient:
             input_tensor = torch.autograd.Variable(input_tensor,
                                                    requires_grad=True)
 
-        outputs = self.activations_and_grads(input_tensor)
+        self.outputs = outputs = self.activations_and_grads(input_tensor)
+
         if targets is None:
             target_categories = torch.argmax(outputs.data, axis=-1)
             targets = [ClassifierOutputTarget(
@@ -160,15 +179,16 @@ class BaseCAM:
     def forward_augmentation_smoothing(self,
                                        input_tensor: torch.Tensor,
                                        targets: List[torch.nn.Module],
-                                       eigen_smooth: bool = False) -> torch.Tensor:
+                                       eigen_smooth: bool = False) -> np.ndarray: # torch.Tensor?
         transforms = tta.Compose(
             [
                 tta.HorizontalFlip(),
                 tta.Multiply(factors=[0.9, 1, 1.1]),
             ]
         )
+
         cams = []
-        for transform in transforms:
+        for transform in self.tta_transforms:
             augmented_tensor = transform.augment_image(input_tensor)
             cam = self.forward(augmented_tensor,
                                targets,
