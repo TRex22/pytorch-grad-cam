@@ -162,7 +162,7 @@ class BaseCAM:
                                      layer_grads,
                                      eigen_smooth)
 
-            with FakeTensorMode(allow_non_fake_inputs=True): cam = torch.maximum(cam.cpu(), torch.tensor(0))
+            with FakeTensorMode(): cam = torch.maximum(cam.cpu(), torch.tensor(0))
             scaled = scale_cam_image(cam, target_size)
             cam_per_target_layer.append(scaled[:, None, :])
 
