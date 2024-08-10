@@ -1,13 +1,15 @@
-import matplotlib
-from matplotlib import pyplot as plt
-from matplotlib.lines import Line2D
+import math
+from typing import Dict, List
+
 import cv2
+import matplotlib
 import numpy as np
 import torch
-from torchvision.transforms import Compose, Normalize, ToTensor, Resize
-from typing import List, Dict
-import math
 
+from matplotlib import pyplot as plt
+from matplotlib.lines import Line2D
+from scipy.ndimage import zoom
+from torchvision.transforms import Compose, Normalize, ToTensor, Resize
 
 def preprocess_image(
     img: np.ndarray, mean=[
@@ -174,6 +176,12 @@ def scale_cam_image(cam, target_size=None):
 
         if target_size is not None:
             img = img.resize_(target_size).T
+
+            # if len(img.shape) > 3:
+            #     img = zoom(np.float32(img), [
+            #                (t_s / i_s) for i_s, t_s in zip(img.shape, target_size[::-1])])
+            # else:
+            #     img = cv2.resize(np.float32(img), target_size)
 
         result[i] = img
 
