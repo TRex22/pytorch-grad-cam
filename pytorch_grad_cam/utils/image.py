@@ -161,15 +161,15 @@ def show_factorization_on_image(img: np.ndarray,
 
 
 def scale_cam_image(cam, target_size=None):
-    if target_size is not None:
-        result = torch.zeros([cam.shape[0], target_size[1], target_size[0]])
-    else:
-        result = torch.zeros(cam.shape)
+    if target_size is None:
+        target_size = (cam.shape[2], cam.shape[1])
+
+    result = torch.zeros([cam.shape[0], target_size[1], target_size[0]])
 
     for i in range(cam.shape[0]):
         img = cam[i]
-        img = img - torch.min(img)
-        img = img / (1e-7 + torch.max(img))
+        img = img - torch.nanmin(img)
+        img = img / (1e-7 + torch.nanmax(img))
 
         if target_size is not None:
             img = img.resize_(target_size).T
