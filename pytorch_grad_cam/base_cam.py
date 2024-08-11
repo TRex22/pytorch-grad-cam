@@ -173,6 +173,7 @@ class BaseCAM:
             # float32, HxW
             cam = cam[:, 0, :, :]
             cams.append(cam)
+            breakpoint()
 
         return torch.mean(cams.to(torch.float32), axis=0)
 
