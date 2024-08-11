@@ -62,6 +62,7 @@ class FullGrad(BaseCAM):
 
         # Loop over the saliency image from every layer
         assert(len(self.bias_data) == len(grads_list))
+
         for bias, grads in zip(self.bias_data, grads_list):
             bias = bias[None, :, None, None]
             # In the paper they take the absolute value,
@@ -73,6 +74,7 @@ class FullGrad(BaseCAM):
             result = np.sum(result, axis=1)
             cam_per_target_layer.append(result[:, None, :])
         cam_per_target_layer = np.concatenate(cam_per_target_layer, axis=1)
+
         if eigen_smooth:
             # Resize to a smaller image, since this method typically has a very large number of channels,
             # and then consumes a lot of memory

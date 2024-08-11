@@ -8,7 +8,7 @@ import torch
 from matplotlib import pyplot as plt
 from matplotlib.lines import Line2D
 from scipy.ndimage import zoom
-from torchvision.transforms import Compose, Normalize, ToTensor
+from torchvision.transforms import Compose, Normalize, ToTensor, Resize
 
 
 def preprocess_image(
@@ -29,6 +29,7 @@ def deprocess_image(img):
     img = img * 0.1
     img = img + 0.5
     img = np.clip(img, 0, 1)
+
     return np.uint8(img * 255)
 
 
@@ -160,31 +161,34 @@ def show_factorization_on_image(img: np.ndarray,
 
 
 def scale_cam_image(cam, target_size=None):
-    result = []
-    for img in cam:
-        img = img - np.min(img)
-        img = img / (1e-7 + np.max(img))
+    if target_size is not None:
+        result = torch.zeros([cam.shape[0], target_size[1], target_size[0]])
+    else:
+        result = torch.zeros(cam.shape)
+
+    for i in range(cam.shape[0]):
+        img = cam[i]
+        img = img - torch.min(img)
+        img = img / (1e-7 + torch.max(img))
+
         if target_size is not None:
-            if len(img.shape) > 3:
-                img = zoom(np.float32(img), [
-                           (t_s / i_s) for i_s, t_s in zip(img.shape, target_size[::-1])])
-            else:
-                img = cv2.resize(np.float32(img), target_size)
+            img = img.resize_(target_size).T
 
-        result.append(img)
-    result = np.float32(result)
+        result[i] = img
 
-    return result
+    return result.to(torch.float32)
 
 
 def scale_accross_batch_and_channels(tensor, target_size):
     batch_size, channel_size = tensor.shape[:2]
     reshaped_tensor = tensor.reshape(
         batch_size * channel_size, *tensor.shape[2:])
+
     result = scale_cam_image(reshaped_tensor, target_size)
     result = result.reshape(
         batch_size,
         channel_size,
         target_size[1],
         target_size[0])
+
     return result

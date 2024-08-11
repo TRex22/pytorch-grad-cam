@@ -1,6 +1,5 @@
 from typing import Callable, List, Optional, Tuple
 
-import numpy as np
 import torch
 import ttach as tta
 
@@ -28,6 +27,7 @@ class BaseCAM:
         self.reshape_transform = reshape_transform
         self.compute_input_gradient = compute_input_gradient
         self.uses_gradients = uses_gradients
+
         if tta_transforms is None:
             self.tta_transforms = tta.Compose(
                 [
@@ -51,7 +51,7 @@ class BaseCAM:
         targets: List[torch.nn.Module],
         activations: torch.Tensor,
         grads: torch.Tensor,
-    ) -> np.ndarray:
+    ) -> torch.Tensor:
         raise Exception("Not Implemented")
 
     def get_cam_image(
@@ -62,13 +62,12 @@ class BaseCAM:
         activations: torch.Tensor,
         grads: torch.Tensor,
         eigen_smooth: bool = False,
-    ) -> np.ndarray:
+    ) -> torch.Tensor:
         weights = self.get_cam_weights(input_tensor, target_layer, targets, activations, grads)
-        # 2D conv
-        if len(activations.shape) == 4:
+
+        if len(activations.shape) == 4: # 2D conv
             weighted_activations = weights[:, :, None, None] * activations
-        # 3D conv
-        elif len(activations.shape) == 5:
+        elif len(activations.shape) == 5: # 3D conv
             weighted_activations = weights[:, :, None, None, None] * activations
         else:
             raise ValueError(f"Invalid activation shape. Get {len(activations.shape)}.")
@@ -77,11 +76,12 @@ class BaseCAM:
             cam = get_2d_projection(weighted_activations)
         else:
             cam = weighted_activations.sum(axis=1)
+
         return cam
 
     def forward(
         self, input_tensor: torch.Tensor, targets: List[torch.nn.Module], eigen_smooth: bool = False
-    ) -> np.ndarray:
+    ) -> torch.Tensor:
         input_tensor = input_tensor.to(self.device)
 
         if self.compute_input_gradient:
@@ -90,7 +90,7 @@ class BaseCAM:
         self.outputs = outputs = self.activations_and_grads(input_tensor)
 
         if targets is None:
-            target_categories = np.argmax(outputs.cpu().data.numpy(), axis=-1)
+            target_categories = torch.argmax(outputs.data, axis=-1)
             targets = [ClassifierOutputTarget(category) for category in target_categories]
 
         if self.uses_gradients:
@@ -108,6 +108,7 @@ class BaseCAM:
         # use all conv layers for example, all Batchnorm layers,
         # or something else.
         cam_per_layer = self.compute_cam_per_layer(input_tensor, targets, eigen_smooth)
+
         return self.aggregate_multi_layers(cam_per_layer)
 
     def get_target_width_height(self, input_tensor: torch.Tensor) -> Tuple[int, int]:
@@ -122,55 +123,58 @@ class BaseCAM:
 
     def compute_cam_per_layer(
         self, input_tensor: torch.Tensor, targets: List[torch.nn.Module], eigen_smooth: bool
-    ) -> np.ndarray:
-        activations_list = [a.cpu().data.numpy() for a in self.activations_and_grads.activations]
-        grads_list = [g.cpu().data.numpy() for g in self.activations_and_grads.gradients]
+    ) -> torch.Tensor:
+        activations_list = [a.data for a in self.activations_and_grads.activations]
+        grads_list = [g.data for g in self.activations_and_grads.gradients]
         target_size = self.get_target_width_height(input_tensor)
 
         cam_per_target_layer = []
+
         # Loop over the saliency image from every layer
         for i in range(len(self.target_layers)):
             target_layer = self.target_layers[i]
             layer_activations = None
             layer_grads = None
+
             if i < len(activations_list):
                 layer_activations = activations_list[i]
+
             if i < len(grads_list):
                 layer_grads = grads_list[i]
 
             cam = self.get_cam_image(input_tensor, target_layer, targets, layer_activations, layer_grads, eigen_smooth)
-            cam = np.maximum(cam, 0)
+            cam = torch.maximum(cam, torch.tensor(0))
             scaled = scale_cam_image(cam, target_size)
+
             cam_per_target_layer.append(scaled[:, None, :])
 
         return cam_per_target_layer
 
-    def aggregate_multi_layers(self, cam_per_target_layer: np.ndarray) -> np.ndarray:
-        cam_per_target_layer = np.concatenate(cam_per_target_layer, axis=1)
-        cam_per_target_layer = np.maximum(cam_per_target_layer, 0)
-        result = np.mean(cam_per_target_layer, axis=1)
+    def aggregate_multi_layers(self, cam_per_target_layer: torch.Tensor) -> torch.Tensor:
+        cam_per_target_layer = torch.cat(cam_per_target_layer, axis=1)
+        cam_per_target_layer = torch.maximum(cam_per_target_layer, torch.tensor(0))
+        result = torch.mean(cam_per_target_layer, axis=1)
+
         return scale_cam_image(result)
 
     def forward_augmentation_smoothing(
         self, input_tensor: torch.Tensor, targets: List[torch.nn.Module], eigen_smooth: bool = False
-    ) -> np.ndarray:
+    ) -> torch.Tensor:
         cams = []
+
         for transform in self.tta_transforms:
             augmented_tensor = transform.augment_image(input_tensor)
             cam = self.forward(augmented_tensor, targets, eigen_smooth)
 
             # The ttach library expects a tensor of size BxCxHxW
             cam = cam[:, None, :, :]
-            cam = torch.from_numpy(cam)
             cam = transform.deaugment_mask(cam)
 
-            # Back to numpy float32, HxW
-            cam = cam.numpy()
+            # float32, HxW
             cam = cam[:, 0, :, :]
             cams.append(cam)
 
-        cam = np.mean(np.float32(cams), axis=0)
-        return cam
+        return torch.mean(cams.to(torch.float32), axis=0)
 
     def __call__(
         self,
@@ -178,7 +182,7 @@ class BaseCAM:
         targets: List[torch.nn.Module] = None,
         aug_smooth: bool = False,
         eigen_smooth: bool = False,
-    ) -> np.ndarray:
+    ) -> torch.Tensor:
         # Smooth the CAM result with test time augmentation
         if aug_smooth is True:
             return self.forward_augmentation_smoothing(input_tensor, targets, eigen_smooth)
@@ -193,6 +197,7 @@ class BaseCAM:
 
     def __exit__(self, exc_type, exc_value, exc_tb):
         self.activations_and_grads.release()
+
         if isinstance(exc_value, IndexError):
             # Handle IndexError here...
             print(f"An exception occurred in CAM with block: {exc_type}. Message: {exc_value}")

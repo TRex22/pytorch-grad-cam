@@ -1,11 +1,9 @@
-import numpy as np
-
+import torch
 from pytorch_grad_cam.base_cam import BaseCAM
 
 
 class GradCAM(BaseCAM):
-    def __init__(self, model, target_layers,
-                 reshape_transform=None):
+    def __init__(self, model, target_layers, reshape_transform=None):
         super(
             GradCAM,
             self).__init__(
@@ -21,11 +19,11 @@ class GradCAM(BaseCAM):
                         grads):
         # 2D image
         if len(grads.shape) == 4:
-            return np.mean(grads, axis=(2, 3))
+            return torch.mean(grads, axis=(2, 3))
         
         # 3D image
         elif len(grads.shape) == 5:
-            return np.mean(grads, axis=(2, 3, 4))
+            return torch.mean(grads, axis=(2, 3, 4))
         
         else:
             raise ValueError("Invalid grads shape." 
