@@ -90,7 +90,7 @@ class BaseCAM:
         self.outputs = outputs = self.activations_and_grads(input_tensor)
 
         if targets is None:
-            target_categories = torch.argmax(outputs.data, axis=-1)
+            target_categories = torch.argmax(outputs.data.to(torch.float32), axis=-1)
             targets = [ClassifierOutputTarget(category) for category in target_categories]
 
         if self.uses_gradients:
@@ -124,8 +124,8 @@ class BaseCAM:
     def compute_cam_per_layer(
         self, input_tensor: torch.Tensor, targets: List[torch.nn.Module], eigen_smooth: bool
     ) -> torch.Tensor:
-        activations_list = [a.data for a in self.activations_and_grads.activations]
-        grads_list = [g.data for g in self.activations_and_grads.gradients]
+        activations_list = [a.data.to(torch.float32) for a in self.activations_and_grads.activations]
+        grads_list = [g.data.to(torch.float32) for g in self.activations_and_grads.gradients]
         target_size = self.get_target_width_height(input_tensor)
 
         cam_per_target_layer = []
@@ -143,7 +143,7 @@ class BaseCAM:
                 layer_grads = grads_list[i]
 
             cam = self.get_cam_image(input_tensor, target_layer, targets, layer_activations, layer_grads, eigen_smooth)
-            cam = torch.maximum(cam, torch.tensor(0))
+            cam = torch.max(cam, torch.tensor(0))
             scaled = scale_cam_image(cam, target_size)
 
             cam_per_target_layer.append(scaled[:, None, :])
@@ -152,7 +152,7 @@ class BaseCAM:
 
     def aggregate_multi_layers(self, cam_per_target_layer: torch.Tensor) -> torch.Tensor:
         cam_per_target_layer = torch.cat(cam_per_target_layer, axis=1)
-        cam_per_target_layer = torch.maximum(cam_per_target_layer, torch.tensor(0))
+        cam_per_target_layer = torch.max(cam_per_target_layer, torch.tensor(0))
         result = torch.mean(cam_per_target_layer, axis=1)
 
         return scale_cam_image(result)
