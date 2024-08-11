@@ -179,7 +179,9 @@ def scale_cam_image(input_cam, target_size=None):
 
     # return result.to(torch.float32)
 
+    # Still more efficient to do the conversion and CPU transfer at the end here
     cam = input_cam.cpu().numpy()
+
     result = []
     for img in cam:
         img = img - np.min(img)
