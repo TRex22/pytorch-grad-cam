@@ -165,11 +165,12 @@ def scale_cam_image(cam, target_size=None):
         target_size = (cam.shape[2], cam.shape[1])
 
     result = torch.zeros([cam.shape[0], target_size[1], target_size[0]])
+    cam = torch.nan_to_num(cam, nan=torch.tensor(0.0).to(torch.float32))
 
     for i in range(cam.shape[0]):
         img = cam[i]
-        img = img - torch.fmin(img, torch.tensor(0))
-        img = img / (1e-7 + torch.fmax(img, torch.tensor(0)))
+        img = img - torch.min(img)
+        img = img / (1e-7 + torch.max(img))
 
         if target_size is not None:
             img = img.resize_(target_size).T
