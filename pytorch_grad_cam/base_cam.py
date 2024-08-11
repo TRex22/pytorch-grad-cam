@@ -76,7 +76,7 @@ class BaseCAM:
             cam = get_2d_projection(weighted_activations)
         else:
             cam = weighted_activations.sum(axis=1)
-        breakpoint()
+
         return cam
 
     def forward(
@@ -147,7 +147,7 @@ class BaseCAM:
             scaled = scale_cam_image(cam, target_size)
 
             cam_per_target_layer.append(scaled[:, None, :])
-
+        breakpoint()
         return cam_per_target_layer
 
     def aggregate_multi_layers(self, cam_per_target_layer: torch.Tensor) -> torch.Tensor:
