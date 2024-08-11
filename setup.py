@@ -8,7 +8,7 @@ with open("requirements.txt", "r") as f:
 
 setuptools.setup(
     name='grad-cam',
-    version='1.5.99.11', # Purposely using a weird version number so I can directly use my fork ... will resolve this in the future
+    version='1.5.99.12', # Purposely using a weird version number so I can directly use my fork ... will resolve this in the future
     author='Jacob Gildenblat',
     author_email='jacob.gildenblat@gmail.com',
     description='Many Class Activation Map methods implemented in Pytorch for classification, segmentation, object detection and more',

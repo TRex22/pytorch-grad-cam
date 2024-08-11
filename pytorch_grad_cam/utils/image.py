@@ -160,24 +160,42 @@ def show_factorization_on_image(img: np.ndarray,
     return result
 
 
-def scale_cam_image(cam, target_size=None):
-    if target_size is None:
-        target_size = (cam.shape[2], cam.shape[1])
+def scale_cam_image(input_cam, target_size=None):
+    # if target_size is None:
+    #     target_size = (input_cam.shape[2], input_cam.shape[1])
 
-    result = torch.zeros([cam.shape[0], target_size[1], target_size[0]])
-    cam = torch.nan_to_num(cam, nan=torch.tensor(0.0).to(torch.float32))
+    # result = torch.zeros([input_cam.shape[0], target_size[1], target_size[0]])
+    # input_cam = torch.nan_to_num(input_cam, nan=torch.tensor(0.0).to(torch.float32))
 
-    for i in range(cam.shape[0]):
-        img = cam[i]
-        img = img - torch.min(img)
-        img = img / (1e-7 + torch.max(img))
+    # for i in range(input_cam.shape[0]):
+    #     img = input_cam[i]
+    #     img = img - torch.min(img)
+    #     img = img / (1e-7 + torch.max(img))
+
+    #     if target_size is not None:
+    #         img = img.resize_(target_size).T
+
+    #     result[i] = img
+
+    # return result.to(torch.float32)
+
+    cam = input_cam.cpu().numpy()
+    result = []
+    for img in cam:
+        img = img - np.min(img)
+        img = img / (1e-7 + np.max(img))
 
         if target_size is not None:
-            img = img.resize_(target_size).T
+            if len(img.shape) > 3:
+                img = zoom(np.float32(img), [
+                           (t_s / i_s) for i_s, t_s in zip(img.shape, target_size[::-1])])
+            else:
+                img = cv2.resize(np.float32(img), target_size)
 
-        result[i] = img
+        result.append(img)
+    result = np.float32(result)
 
-    return result.to(torch.float32)
+    return torch.tensor(result)
 
 
 def scale_accross_batch_and_channels(tensor, target_size):
