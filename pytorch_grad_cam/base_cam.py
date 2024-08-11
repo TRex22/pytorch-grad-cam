@@ -147,14 +147,14 @@ class BaseCAM:
             scaled = scale_cam_image(cam, target_size)
 
             cam_per_target_layer.append(scaled[:, None, :])
-        breakpoint()
+
         return cam_per_target_layer
 
     def aggregate_multi_layers(self, cam_per_target_layer: torch.Tensor) -> torch.Tensor:
         cam_per_target_layer = torch.cat(cam_per_target_layer, axis=1)
         cam_per_target_layer = torch.maximum(cam_per_target_layer, torch.tensor(0))
         result = torch.mean(cam_per_target_layer, axis=1)
-
+        breakpoint()
         return scale_cam_image(result)
 
     def forward_augmentation_smoothing(
