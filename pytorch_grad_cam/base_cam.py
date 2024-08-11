@@ -76,7 +76,7 @@ class BaseCAM:
             cam = get_2d_projection(weighted_activations)
         else:
             cam = weighted_activations.sum(axis=1)
-
+        breakpoint()
         return cam
 
     def forward(
@@ -173,7 +173,6 @@ class BaseCAM:
             # float32, HxW
             cam = cam[:, 0, :, :]
             cams.append(cam)
-            breakpoint()
 
         return torch.mean(cams.to(torch.float32), axis=0)
 
