@@ -2,7 +2,6 @@ import torch
 
 
 def get_2d_projection(activation_batch):
-    # TBD: use pytorch batch svd implementation
     activation_batch[torch.isnan(activation_batch)] = 0
     projections = []
 
@@ -15,7 +14,9 @@ def get_2d_projection(activation_batch):
         reshaped_activations = reshaped_activations - \
             reshaped_activations.mean(axis=0)
 
-        U, S, VT = torch.linalg.svd(reshaped_activations, full_matrices=True)
+        # U, S, VT = torch.linalg.svd(reshaped_activations, full_matrices=True)
+        # Faster SVD: https://github.com/KinglittleQ/torch-batch-svd
+        U, S, VT = torch.svd(reshaped_activations)
         projection = reshaped_activations @ VT[0, :]
         projection = projection.reshape(activations.shape[1:])
         projections.append(projection)
